@@ -9,8 +9,6 @@ import random
 from datetime import ( datetime )
 from weather_api import ( WeatherApi )
 
-load_dotenv()
-
 client = MongoClient(st.secrets.database.mongodb_uri)
 db = client['FarmCast']
 collection = db['crops']

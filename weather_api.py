@@ -19,7 +19,6 @@ class WeatherData:
 class WeatherApi():
 
     def __init__(self, place):
-        load_dotenv()
         self.query = place
         self.dt = datetime.now().date()
         self._key = self.get_api_key()
