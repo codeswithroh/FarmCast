@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-client = MongoClient(os.environ.get('MONGO_URI'))
+client = MongoClient(st.secrets.database.mongodb_uri)
 db = client['FarmCast']
 collection = db['crops']
 

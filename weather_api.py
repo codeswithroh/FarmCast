@@ -1,6 +1,7 @@
 import os
 import pytz
 import requests
+import streamlit as st
 from dotenv import load_dotenv
 import pandas as pd
 from datetime import ( datetime )
@@ -30,7 +31,8 @@ class WeatherApi():
         """
         Returns the API key from environment variable.
         """
-        API_KEY = os.environ.get('WEATHER_API')
+        # API_KEY = os.environ.get('WEATHER_API')
+        API_KEY = st.secrets.api_keys.weather_api
         if not API_KEY:
             raise ValueError('API key is not available.')
         else:
