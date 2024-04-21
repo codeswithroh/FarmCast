@@ -2,7 +2,6 @@ import os
 import pytz
 import requests
 import streamlit as st
-from dotenv import load_dotenv
 import pandas as pd
 from datetime import ( datetime )
 from dataclasses import ( dataclass )

@@ -8,7 +8,6 @@ import time
 import random
 from datetime import ( datetime )
 from weather_api import ( WeatherApi )
-from dotenv import load_dotenv
 
 load_dotenv()
 
