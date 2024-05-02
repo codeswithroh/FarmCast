@@ -34,87 +34,35 @@ def is_crop_in_danger(data):
 
 def main():
     st.title('FarmCast')
-    st.subheader('Local Farm Parameters')
+    st.sidebar.title('FarmCast')
+    st.sidebar.markdown('Welcome to FarmCast! Monitor your farm with real-time data.')
+    
+    # Create a sidebar with two tabs: Dashboard and Weather Forecast
+    tabs = st.sidebar.radio('Navigation', ['Dashboard', 'Weather Forecast'])
 
-    col1, col2, col3 = st.columns(3)
-    temp_metric = col1.empty()
-    hum_metric = col2.empty()
-    soil_metric = col3.empty()
+    if tabs == 'Dashboard':
+        st.subheader('Local Farm Parameters')
 
-    col1, col2, col3 = st.columns(3)
-    temp_warning = col1.empty()
-    hum_warning = col2.empty()
-    soil_warning = col3.empty()
+        col1, col2, col3 = st.columns(3)
+        temp_metric = col1.empty()
+        hum_metric = col2.empty()
+        soil_metric = col3.empty()
 
-    col1, col2 = st.columns(2)
-    alt_metric = col1.empty()
-    press_metric = col2.empty()
+        col1, col2, col3 = st.columns(3)
+        temp_warning = col1.empty()
+        hum_warning = col2.empty()
+        soil_warning = col3.empty()
 
-    col1, col2 = st.columns(2)
-    alt_warning = col1.empty()
-    press_warning = col2.empty()
+        col1, col2 = st.columns(2)
+        alt_metric = col1.empty()
+        press_metric = col2.empty()
 
-    rainfall_metric = st.empty()
-    crop_warning = st.empty()
+        col1, col2 = st.columns(2)
+        alt_warning = col1.empty()
+        press_warning = col2.empty()
 
-    st.subheader('Current Weather')
-    st.markdown(f"""
-        The current weather is <b>{weather_data["current_weather"]}</b> °C,
-        with wind speed of <b>{weather_data["wind_speed"]}</b> kph.
-        The current wind direction is <b>{weather_data["wind_direction"]}</b>.
-        """,
-            unsafe_allow_html=True
-            )
-    st.markdown(
-        f'Weather condition: <b>{weather_data["temp_condition"]}</b>',
-        unsafe_allow_html=True
-        )
-
-    st.subheader('Next 3 day forecast')
-
-    graph, hourly_data = st.tabs(['Graph', 'Hourly Data'])
-
-    with graph:
-        time_now = datetime.now()
-        IST = pytz.timezone('Asia/Kolkata')
-        ist_time_now = datetime.now(IST)
-
-        fig = go.Figure()
-        fig.add_trace(
-                go.Scatter(
-                    x = next_3_day_data['date'],
-                    y = next_3_day_data['temp_c'],
-                    mode = 'lines',
-                    name = 'Hourly Temp (°C)'
-                )
-            )
-
-        fig.add_trace(
-            go.Scatter(
-                    x = next_3_day_data['date'], 
-                    y = next_3_day_data['feels_like'],
-                    mode = 'lines',
-                    name = 'Feels Like (°C)'
-                )
-            )
-
-        fig.add_vline(
-                x = ist_time_now,
-                line_color = "green",
-                opacity = 0.4
-            )
-
-        fig.update_layout(
-                title = "Hourly Weather Forecast",
-                xaxis_title = "Date",
-                yaxis_title = "Temperature °C",
-                hovermode = "x"
-            )
-
-        st.plotly_chart(fig, use_container_width=True)
-
-        with hourly_data:
-            st.write(next_3_day_data)
+        rainfall_metric = st.empty()
+        crop_warning = st.empty()
 
         while True:
             data = load_data()
@@ -149,6 +97,66 @@ def main():
                 crop_warning.success('Your crop is safe!')
 
             time.sleep(10)
+
+    elif tabs == 'Weather Forecast':
+        st.subheader('Current Weather')
+        st.markdown(f"""
+            The current weather is <b>{weather_data["current_weather"]}</b> °C,
+            with wind speed of <b>{weather_data["wind_speed"]}</b> kph.
+            The current wind direction is <b>{weather_data["wind_direction"]}</b>.
+            """,
+            unsafe_allow_html=True
+        )
+        st.markdown(
+            f'Weather condition: <b>{weather_data["temp_condition"]}</b>',
+            unsafe_allow_html=True
+        )
+
+        st.subheader('Next 3 day forecast')
+
+        time_now = datetime.now()
+        IST = pytz.timezone('Asia/Kolkata')
+        ist_time_now = datetime.now(IST)
+
+        fig = go.Figure()
+        fig.add_trace(
+            go.Scatter(
+                x=next_3_day_data['date'],
+                y=next_3_day_data['temp_c'],
+                mode='lines',
+                name='Hourly Temp (°C)'
+            )
+        )
+
+        fig.add_trace(
+                        go.Scatter(
+                            x=next_3_day_data['date'],
+                            y=next_3_day_data['feels_like'],
+                            mode='lines',
+                            name='Feels Like (°C)'
+                        )
+                    )
+
+        fig.add_vline(
+                x=ist_time_now,
+                line_color="green",
+                opacity=0.4
+            )
+
+        fig.update_layout(
+                title="Hourly Weather Forecast",
+                xaxis_title="Date",
+                yaxis_title="Temperature °C",
+                hovermode="x"
+            )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+        st.write('')  # Add an empty line to create space between the chart and the table
+
+        st.write(next_3_day_data)
+
+
     
 
 if __name__ == '__main__':
