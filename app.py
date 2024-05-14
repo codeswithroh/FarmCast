@@ -12,11 +12,15 @@ from weather_api import ( WeatherApi )
 client = MongoClient(st.secrets.database.mongodb_uri)
 db = client['FarmCast']
 collection = db['crops']
+claimCollection = db['claims']
 
 city = "Kolkata"
 api_connection = WeatherApi(city)
 weather_data = api_connection.get_current_weather()
 next_3_day_data = api_connection.get_three_days_weather()
+
+def format_datetime(dt):
+    return dt.strftime('%Y-%m-%d %H:%M:%S')
 
 def get_random_document():
     random_doc = collection.aggregate([{ '$sample': { 'size': 1 } }])
@@ -32,13 +36,74 @@ def load_data():
 def is_crop_in_danger(data):
     return any(data['airTemperature'] > 30) or any(data['airHumidity'] > 80)
 
+def get_claims():
+    claims = claimCollection.find()
+    return list(claims)
+
+def change_claim_status(claim_id, status):
+    updatedCollection = claimCollection.find_one_and_update({"_id": claim_id}, {'$set': {'status': status}})
+
+    get_claims()
+
+    if status == 'APPROVED':
+        st.success(f"Claim {status} successfully!")
+
+    if status == 'REJECTED':
+        st.error(f"Claim rejected")
+
+    return updatedCollection
+
+def display_card(claim, show_verify=False, show_reject=False):
+    st.markdown(
+        f"""
+        <div style="border-radius: 10px; padding: 1em; margin:1em; background-color: #f0f0f0;">
+            <h3>{claim['reason']}</h3>
+            <p>From: {format_datetime(claim['fromTime'])}</p>
+            <p>To: {format_datetime(claim['toTime'])}</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    m = st.markdown("""
+    <style>
+    .stButton>button {
+        border-radius: 5px;
+        padding: 1em 2em;
+        margin-right: 10px;
+        font-weight: 900;
+        font-size: 1em;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    if show_verify or show_reject:
+        if show_verify and show_reject:
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button('Reject', key='reject'+claim['_id'].__str__()):
+                    change_claim_status(claim['_id'], 'REJECTED')
+            with col2:
+                if st.button('Verify', key='verify'+claim['_id'].__str__()):
+                    change_claim_status(claim['_id'], 'APPROVED')
+        elif show_verify:
+            if st.button('Verify', key='verify'+claim['_id'].__str__()):
+                change_claim_status(claim['_id'], 'APPROVED')
+
+    st.markdown(
+        f"""
+        <hr>
+        """,
+        unsafe_allow_html=True
+    )
+
+
 def main():
     st.title('FarmCast')
     st.sidebar.title('FarmCast')
     st.sidebar.markdown('Welcome to FarmCast! Monitor your farm with real-time data.')
     
     # Create a sidebar with two tabs: Dashboard and Weather Forecast
-    tabs = st.sidebar.radio('Navigation', ['Dashboard', 'Weather Forecast'])
+    tabs = st.sidebar.radio('Navigation', ['Dashboard', 'Weather Forecast','Claims'])
 
     if tabs == 'Dashboard':
         st.subheader('Local Farm Parameters')
@@ -155,7 +220,28 @@ def main():
         st.write('')  # Add an empty line to create space between the chart and the table
 
         st.write(next_3_day_data)
+    else:
+        st.subheader('Claims')
+        claims = get_claims()
+        if len(claims) > 0:
+            pending_claims = [claim for claim in claims if claim['status'] == 'PENDING']
+            approved_claims = [claim for claim in claims if claim['status'] == 'APPROVED']
+            rejected_claims = [claim for claim in claims if claim['status'] == 'REJECTED']
 
+            st.sidebar.title('Claims')
+            status = st.sidebar.radio('Choose a status', ('Pending', 'Approved','Rejected'))
+
+            if status == 'Pending':
+                for claim in pending_claims:
+                    display_card(claim, show_verify=True, show_reject=True)
+            elif status == 'Approved':
+                for claim in approved_claims:
+                    display_card(claim)
+            else:
+                for claim in rejected_claims:
+                    display_card(claim)
+        else:
+            st.write('No claims yet!')
 
     
 
