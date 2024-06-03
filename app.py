@@ -11,7 +11,7 @@ from weather_api import ( WeatherApi )
 
 client = MongoClient(st.secrets.database.mongodb_uri)
 db = client['FarmCast']
-collection = db['crops']
+collection = db['readings']
 claimCollection = db['claims']
 
 city = "Kolkata"
@@ -23,18 +23,19 @@ def format_datetime(dt):
     return dt.strftime('%Y-%m-%d %H:%M:%S')
 
 def get_random_document():
-    random_doc = collection.aggregate([{ '$sample': { 'size': 1 } }])
-    return random_doc.next()
+    most_recent_doc = collection.find().sort([("_id", -1)]).limit(1)
+    return most_recent_doc[0] if most_recent_doc else None
 
 
 def load_data():
     document = get_random_document()
-    data = pd.DataFrame(document['data'])
-    data['timestamp'] = pd.to_datetime(data['timestamp'])
-    return data
+    print(document['temperatureDHT'])
+    return document
 
 def is_crop_in_danger(data):
-    return any(data['airTemperature'] > 30) or any(data['airHumidity'] > 80)
+    if (data['temperatureDHT'] > 30 or data['humidity'] > 80):
+        return True
+    return False
 
 def get_claims():
     claims = claimCollection.find()
@@ -118,9 +119,10 @@ def main():
         hum_warning = col2.empty()
         soil_warning = col3.empty()
 
-        col1, col2 = st.columns(2)
-        alt_metric = col1.empty()
-        press_metric = col2.empty()
+        col1, col2,col3 = st.columns(3)
+        wind_dir_metric = col1.empty()
+        wind_speed_metric = col2.empty()
+        press_metric = col3.empty()
 
         col1, col2 = st.columns(2)
         alt_warning = col1.empty()
@@ -133,27 +135,30 @@ def main():
             data = load_data()
             
             # Update temperature metric and warning
-            temp_metric.metric("Temperature", round(data['airTemperature'].iloc[-1],2), "°C")
-            temp_warning.warning("High" if data['airTemperature'].iloc[-1] > 30 else "Low")
+            temp_metric.metric("Temperature", data['temperatureDHT'], "°C")
+            temp_warning.warning("High" if data['temperatureDHT'] > 30 else "Low")
 
             # Update humidity metric and warning
-            hum_metric.metric("Humidity", round(data['airHumidity'].iloc[-1],2), "%")
-            hum_warning.warning("High" if data['airHumidity'].iloc[-1] > 80 else "Low")
+            hum_metric.metric("Humidity", data['humidity'], "%")
+            hum_warning.warning("High" if data['humidity'] > 80 else "Low")
 
             # Update soil moisture metric and warning
-            soil_metric.metric("Soil Moisture", round(data['soilMoisture'].iloc[-1],2), "%")
-            soil_warning.warning("High" if data['soilMoisture'].iloc[-1] > 50 else "Low")
+            soil_metric.metric("Soil Moisture", data['soilMoisture'], "%")
+            soil_warning.warning("High" if data['soilMoisture'] > 50 else "Low")
 
             # Update altitude metric and warning
-            alt_metric.metric("Altitude", round(data['altitude'].iloc[-1],2), "m")
-            alt_warning.warning("High" if data['altitude'].iloc[-1] > 3000 else "Low")
+            wind_dir_metric.metric("Wind Direction", data['windDirection'], "")
+            # alt_warning.warning("High" if data['windDirection'].iloc[-1] > 3000 else "Low")
+            
+            wind_speed_metric.metric("Wind Speed", data['windSpeed'], "kmph")
+            # alt_warning.warning("High" if data['windDirection'].iloc[-1] > 3000 else "Low")
 
             # Update air pressure metric and warning
-            press_metric.metric("Air Pressure", round(data['airPressure'].iloc[-1],2), "hPa")
-            press_warning.warning("High" if data['airPressure'].iloc[-1] > 1000 else "Low")
+            press_metric.metric("Air Pressure", data['pressure'], "hPa")
+            # press_warning.warning("High" if data['pressure'] > 1000 else "Low")
 
             # Update rainfall metric
-            rainfall_metric.metric("Rainfall", "Yes" if data['rainfall'].iloc[-1] else "No")
+            rainfall_metric.metric("Rainfall", "Yes" if data['isRaining'] else "No")
 
             # Update crop warning
             if is_crop_in_danger(data):
