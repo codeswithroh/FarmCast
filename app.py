@@ -29,7 +29,6 @@ def get_random_document():
 
 def load_data():
     document = get_random_document()
-    print(document['temperatureDHT'])
     return document
 
 def is_crop_in_danger(data):
@@ -99,7 +98,12 @@ def display_card(claim, show_verify=False, show_reject=False):
 
 
 def main():
-    st.title('FarmCast')
+    logo = "farmcastlogo.png"
+
+
+    st.image(logo, width=150)
+
+    
     st.sidebar.title('FarmCast')
     st.sidebar.markdown('Welcome to FarmCast! Monitor your farm with real-time data.')
     
@@ -107,8 +111,6 @@ def main():
     tabs = st.sidebar.radio('Navigation', ['Dashboard', 'Weather Forecast','Claims'])
 
     if tabs == 'Dashboard':
-        st.subheader('Local Farm Parameters')
-
         col1, col2, col3 = st.columns(3)
         temp_metric = col1.empty()
         hum_metric = col2.empty()
