@@ -7,7 +7,7 @@ from pymongo import MongoClient
 ser = serial.Serial('COM6', 9600, timeout=1)
 
 # Set up MongoDB connection
-client = MongoClient('mongodb+srv://codeswithroh:codeswithroh@cluster0.frga0.mongodb.net/')
+client = MongoClient('YOUR_MONGO_CLIENT')
 db = client['FarmCast']
 collection = db['readings']
 
